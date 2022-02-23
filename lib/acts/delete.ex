@@ -4,7 +4,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
   """
   alias Bonfire.Epics.{Act, Epic}
   alias Ecto.Changeset
-  require Act
+  import Bonfire.Epics
   use Arrows
   import Where
 
@@ -13,7 +13,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
     subject = epic.assigns[on]
     cond do
       epic.errors != [] ->
-        Act.debug(epic, act, "skipping because of epic errors")
+        maybe_debug(epic, act, "skipping because of epic errors")
         epic
       not is_atom(on) ->
         error(on, "Invalid `on` key provided")
@@ -22,14 +22,13 @@ defmodule Bonfire.Ecto.Acts.Delete do
         warn(subject, "don't know how to delete this, expected a changeset or ecto struct")
         epic
       subject.__struct__ == Changeset ->
-        Act.debug(epic, act, "Got changeset, marking for deletion")
+        maybe_debug(epic, act, "Got changeset, marking for deletion")
         Epic.assign(epic, on, Map.put(subject, :action, :delete))
       true ->
-        Act.debug(epic, act, "Got object, marking for deletion")
+        maybe_debug(epic, act, "Got object, marking for deletion")
         Changeset.cast(subject, %{}, [])
         |> Map.put(:action, :delete)
         |> Epic.assign(epic, on, ...)
     end
   end
 end
-

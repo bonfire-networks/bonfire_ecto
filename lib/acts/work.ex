@@ -7,11 +7,11 @@ defmodule Bonfire.Ecto.Acts.Work do
 
   Only runs if there are no epic or changesets errors.
   """
-  require Logger 
+  require Logger
   import Bonfire.Common.Utils
   alias Bonfire.Epics.{Act, Epic}
   alias Ecto.Changeset
-  require Act
+  import Bonfire.Epics
   use Arrows
   import Where
 
@@ -33,13 +33,13 @@ defmodule Bonfire.Ecto.Acts.Work do
     epic = promote_changeset_errors(epic, act, changesets)
     cond do
       epic.errors != [] ->
-        Act.debug(epic, act, length(epic.errors), "Skipping due to epic errors")
+        maybe_debug(epic, act, length(epic.errors), "Skipping due to epic errors")
         epic
       changesets == [] ->
-        Act.debug(epic, act, "Skipping, nothing to do")
+        maybe_debug(epic, act, "Skipping, nothing to do")
         epic
       true ->
-        Act.debug(epic, act, "Entering transaction")
+        maybe_debug(epic, act, "Entering transaction")
         repo = Application.get_env(:bonfire, :repo_module)
         case repo.transact_with(fn -> run(epic, act, changesets, repo) end) do
           {:ok, epic} -> epic
@@ -54,22 +54,22 @@ defmodule Bonfire.Ecto.Acts.Work do
   defp run(epic, act, [{key, changeset}|changesets], repo) do
     case changeset.action do
       :insert ->
-        Act.debug(epic, act, "Inserting changeset at :#{key}")
+        maybe_debug(epic, act, "Inserting changeset at :#{key}")
         repo.insert(changeset)
       :update ->
-        Act.debug(epic, act, "Applying update to changeset at :#{key}")
+        maybe_debug(epic, act, "Applying update to changeset at :#{key}")
         repo.update(changeset)
       :delete ->
-        Act.debug(epic, act, "Deleting changeset at :#{key}")
+        maybe_debug(epic, act, "Deleting changeset at :#{key}")
         repo.delete(changeset)
     end
     |> case do
          {:ok, value} ->
-           Act.debug(epic, act, "Successfully applied :#{key}")
+           maybe_debug(epic, act, "Successfully applied :#{key}")
            Epic.assign(epic, key, value)
            |> run(act, changesets, repo)
          {:error, value} ->
-           Act.debug(epic, act, value, "Error")
+           maybe_debug(epic, act, value, "Error")
            {:error, Epic.add_error(epic, act, value)}
        end
   end
@@ -77,7 +77,7 @@ defmodule Bonfire.Ecto.Acts.Work do
   defp promote_changeset_errors(epic, act, changesets) do
     Enum.reduce(changesets, epic, fn {_, changeset}, epic ->
       if !changeset.valid? do
-        Act.debug(epic, act, changeset, "Adding changeset to epic errors")
+        maybe_debug(epic, act, changeset, "Adding changeset to epic errors")
         Epic.add_error(epic, act, changeset)
       else
         epic
@@ -90,10 +90,10 @@ defmodule Bonfire.Ecto.Acts.Work do
     case epic.assigns[key] do
       %Changeset{action: action}=changeset when action in [:insert, :update, :delete] -> [{key, changeset}]
       %Changeset{action: action} ->
-        Act.debug(epic, act, "Skipping changeset at key :#{key} with unknown action :#{action}")
+        maybe_debug(epic, act, "Skipping changeset at key :#{key} with unknown action :#{action}")
         []
       nil ->
-        Act.debug(epic, act, "Skipping missing key :#{key}")
+        maybe_debug(epic, act, "Skipping missing key :#{key}")
         []
       other ->
         error(other, "Skipping, not a changeset :#{key}")
