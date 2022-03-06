@@ -1,4 +1,6 @@
-# bonfire_ecto
+# Bonfire.Ecto
+
+`Bonfire.Ecto` contains Ecto transactional support as acts for `Bonfire.Epics`
 
 <!-- **TODO: Add description** -->
 
