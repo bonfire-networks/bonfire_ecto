@@ -1,6 +1,6 @@
 defmodule Bonfire.Ecto do
   @moduledoc """
-  Bonfire, meet ecto
+  `Bonfire.Epics` helpers for working with `Ecto`
   """
 
 end

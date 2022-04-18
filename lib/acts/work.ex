@@ -26,6 +26,7 @@ defmodule Bonfire.Ecto.Acts.Work do
 
   @doc false
   def run(epic, act) do
+    debug(act)
     # retrieve the list of keys to check
     keys = Map.get(epic.assigns, __MODULE__, [])
     # flatten them all into a keyword list
@@ -52,31 +53,34 @@ defmodule Bonfire.Ecto.Acts.Work do
   defp run(epic, act, changesets, repo)
   defp run(epic, _, [], _), do: {:ok, epic}
   defp run(epic, act, [{key, changeset}|changesets], repo) do
-    case changeset.action do
+    case Map.get(changeset, :action, nil) do
       :insert ->
-        maybe_debug(epic, act, "Inserting changeset at :#{key}")
+        maybe_debug(epic, act, key, "Inserting changeset at")
         repo.insert(changeset)
       :update ->
-        maybe_debug(epic, act, "Applying update to changeset at :#{key}")
+        maybe_debug(epic, act, key, "Applying update to changeset at")
         repo.update(changeset)
       :delete ->
-        maybe_debug(epic, act, "Deleting changeset at :#{key}")
+        maybe_debug(epic, act, key, "Deleting changeset at")
         repo.delete(changeset)
+      other when is_struct(changeset) ->
+        maybe_debug(epic, act, other, "Did not detect a changeset with a valid action, attempt as object") # FIXME: only trigger in delete epics
+        maybe_delete(changeset, repo) |> debug()
     end
     |> case do
          {:ok, value} ->
-           maybe_debug(epic, act, "Successfully applied :#{key}")
+           maybe_debug(epic, act, key, "Successfully applied")
            Epic.assign(epic, key, value)
            |> run(act, changesets, repo)
          {:error, value} ->
-           maybe_debug(epic, act, value, "Error")
+           maybe_debug(epic, act, value, "Error running changeset")
            {:error, Epic.add_error(epic, act, value)}
        end
   end
 
   defp promote_changeset_errors(epic, act, changesets) do
     Enum.reduce(changesets, epic, fn {_, changeset}, epic ->
-      if !changeset.valid? do
+      if Map.has_key?(changeset, :valid) and !changeset.valid? do
         maybe_debug(epic, act, changeset, "Adding changeset to epic errors")
         Epic.add_error(epic, act, changeset)
       else
@@ -88,10 +92,13 @@ defmodule Bonfire.Ecto.Acts.Work do
   # looks a key up, makes sure it's sane, otherwise discards it, possibly logging an error.
   defp get_key(epic, act, key) do
     case epic.assigns[key] do
-      %Changeset{action: action}=changeset when action in [:insert, :update, :delete] -> [{key, changeset}]
+      %Changeset{action: action}=changeset when action in [:insert, :update, :delete] ->
+        [{key, changeset}]
       %Changeset{action: action} ->
         maybe_debug(epic, act, "Skipping changeset at key :#{key} with unknown action :#{action}")
         []
+      object when is_struct(object) -> # FIXME: this should only kick in for deletion epics
+        [{key, object}]
       nil ->
         maybe_debug(epic, act, "Skipping missing key :#{key}")
         []
@@ -99,6 +106,14 @@ defmodule Bonfire.Ecto.Acts.Work do
         error(other, "Skipping, not a changeset :#{key}")
         []
     end
+  end
+
+  defp maybe_delete(object, repo) do
+    repo.delete(object)
+  rescue
+    e in Ecto.StaleEntryError ->
+      warn(e, "already deleted")
+      {:ok, nil}
   end
 
 end

@@ -6,7 +6,7 @@ if Code.ensure_loaded?(Bonfire.Common.Utils) do
 
     def run(epic, act) do
       raise RuntimeError, message: """
-      Commit without Begin!
+      Bonfire.Ecto: Attempted to Commit without a Begin first!
 
       epic: #{inspect(epic)}
 
