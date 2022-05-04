@@ -36,10 +36,10 @@ defmodule Bonfire.Ecto.Acts.Delete do
         maybe_debug(epic, act, subject, "Got object, marking for deletion")
 
         # try to preload each assocation that should potentially be deleted
-        # subject = Enum.reduce(delete_associations, subject, &Bonfire.Repo.maybe_preload(&2, &1, false))
+        # subject = Enum.reduce(delete_associations, subject, &Bonfire.Common.Repo.maybe_preload(&2, &1, false))
 
         epic = Enum.reduce(delete_associations, epic, fn assoc, epic ->
-          case Bonfire.Repo.maybe_preload(subject, assoc)
+          case Bonfire.Common.Repo.maybe_preload(subject, assoc)
               |> Map.get(assoc) do
                 %{} = loaded -> loaded
                                 # |> mark_for_deletion()

@@ -20,7 +20,7 @@ defmodule Bonfire.Ecto.Acts.Begin do
         %{ epic | next: rest }
       true ->
         debug(epic, act, "entering transaction")
-        Bonfire.Repo.transact_with(fn ->
+        Bonfire.Common.Repo.transact_with(fn ->
           epic = Epic.run(nested)
           if epic.errors == [], do: {:ok, epic}, else: {:error, epic}
         end)
