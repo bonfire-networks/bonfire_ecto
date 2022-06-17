@@ -53,7 +53,7 @@ defmodule Bonfire.Ecto.Acts.Work do
   defp run(epic, act, changesets, repo)
   defp run(epic, _, [], _), do: {:ok, epic}
   defp run(epic, act, [{key, changeset}|changesets], repo) do
-    case Map.get(changeset, :action, nil) do
+    case e(changeset, :action, nil) do
       :insert ->
         maybe_debug(epic, act, key, "Inserting changeset at")
         repo.insert(changeset)
@@ -63,9 +63,10 @@ defmodule Bonfire.Ecto.Acts.Work do
       :delete ->
         maybe_debug(epic, act, key, "Deleting changeset at")
         repo.delete(changeset)
-      other when is_struct(changeset) ->
-        maybe_debug(epic, act, other, "Did not detect a changeset with a valid action, attempt as object") # FIXME: only trigger in delete epics
-        maybe_delete(changeset, repo) |> debug()
+      other when is_struct(changeset) or is_list(changeset) ->
+        maybe_debug(epic, act, other, "Did not detect a changeset with a valid action, attempt as object") # FIXME: only trigger in delete epics!
+        Bonfire.Ecto.Acts.Delete.maybe_delete(changeset, repo)
+        |> debug()
     end
     |> case do
          {:ok, value} ->
@@ -80,7 +81,7 @@ defmodule Bonfire.Ecto.Acts.Work do
 
   defp promote_changeset_errors(epic, act, changesets) do
     Enum.reduce(changesets, epic, fn {_, changeset}, epic ->
-      if Map.has_key?(changeset, :valid) and !changeset.valid? do
+      if is_map(changeset) and Map.has_key?(changeset, :valid) and !changeset.valid? do
         maybe_debug(epic, act, changeset, "Adding changeset to epic errors")
         Epic.add_error(epic, act, changeset)
       else
@@ -97,7 +98,7 @@ defmodule Bonfire.Ecto.Acts.Work do
       %Changeset{action: action} ->
         maybe_debug(epic, act, "Skipping changeset at key :#{key} with unknown action :#{action}")
         []
-      object when is_struct(object) -> # FIXME: this should only kick in for deletion epics
+      object when is_struct(object) or is_list(object) -> # FIXME: this should only kick in for deletion epics
         [{key, object}]
       nil ->
         maybe_debug(epic, act, "Skipping missing key :#{key}")
@@ -108,12 +109,5 @@ defmodule Bonfire.Ecto.Acts.Work do
     end
   end
 
-  defp maybe_delete(object, repo) do
-    repo.delete(object)
-  rescue
-    e in Ecto.StaleEntryError ->
-      warn(e, "already deleted")
-      {:ok, nil}
-  end
 
 end

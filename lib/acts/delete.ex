@@ -11,14 +11,15 @@ defmodule Bonfire.Ecto.Acts.Delete do
 
   def run(epic, act) do
     on = act.options[:on]
-    subject = epic.assigns[on]
+    object = epic.assigns[on]
 
     delete_associations = (
       Keyword.get(epic.assigns[:options], :delete_associations, [])
       ++ (act.options[:delete_extra_associations] || [])
-    ) |> Enum.uniq()
+    )
+    |> Enum.uniq()
 
-    maybe_debug(epic, act, delete_associations, "Delete including associations")
+    maybe_debug(epic, act, delete_associations, "Delete including these associations")
 
     cond do
       epic.errors != [] ->
@@ -27,36 +28,40 @@ defmodule Bonfire.Ecto.Acts.Delete do
       not is_atom(on) ->
         error(on, "Invalid `on` key provided")
         Epic.add_error(epic, act, {:invalid_on, on})
-      # is_struct(subject) and subject.__struct__ == Changeset ->
-      #   maybe_debug(epic, act, subject, "Got changeset, marking for deletion")
-      #   mark_for_deletion(subject, delete_associations)
+      # is_struct(object) and object.__struct__ == Changeset ->
+      #   maybe_debug(epic, act, object, "Got changeset, marking for deletion")
+      #   mark_for_deletion(object, delete_associations)
       #   |> Epic.assign(epic, on, ...)
 
-      is_struct(subject) ->
-        maybe_debug(epic, act, subject, "Got object, marking for deletion")
+      is_struct(object) ->
+        maybe_debug(epic, act, object, "Got object, marking for deletion")
+
+        repo = Application.get_env(:bonfire, :repo_module)
 
         # try to preload each assocation that should potentially be deleted
-        # subject = Enum.reduce(delete_associations, subject, &Bonfire.Common.Repo.maybe_preload(&2, &1, false))
+        # object = Enum.reduce(delete_associations, object, &repo.maybe_preload(&2, &1, false))
 
         epic = Enum.reduce(delete_associations, epic, fn assoc, epic ->
-          case Bonfire.Common.Repo.maybe_preload(subject, assoc)
+          case repo.maybe_preload(object, assoc)
               |> Map.get(assoc) do
-                %{} = loaded -> loaded
+                loaded when is_map(loaded) or is_list(loaded) -> loaded
                                 # |> mark_for_deletion()
                                 |> Epic.assign(epic, assoc, ...)
                                 |> Work.add(assoc)
-                _ -> epic
+                _ ->
+                  maybe_debug(epic, act, assoc, "skipping association")
+                  epic
               end
         end)
         # |> debug("assoc objects")
 
-        subject
+        object
         # |> mark_for_deletion()
         |> Epic.assign(epic, on, ...)
         |> Work.add(on)
 
       true ->
-        warn(subject, "Don't know how to delete this, expected an ecto struct")
+        warn(object, "Don't know how to delete this, expected an ecto struct")
         epic
     end
   end
@@ -90,4 +95,19 @@ defmodule Bonfire.Ecto.Acts.Delete do
       debug(e, "skip")
       changeset
   end
+
+  def maybe_delete(objects, repo) when is_list(objects) do
+    # FIXME: very inefficient
+    Enum.each(objects, &maybe_delete(&1, repo))
+    {:ok, nil}
+  end
+
+  def maybe_delete(object, repo) do
+    repo.delete(object)
+  rescue
+    e in Ecto.StaleEntryError ->
+      warn(e, "already deleted")
+      {:ok, nil}
+  end
+
 end
