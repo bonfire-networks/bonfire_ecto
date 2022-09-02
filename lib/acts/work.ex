@@ -13,7 +13,7 @@ defmodule Bonfire.Ecto.Acts.Work do
   alias Ecto.Changeset
   import Bonfire.Epics
   use Arrows
-  import Where
+  import Untangle
 
   @doc """
   Records that a particular key contains a changeset for processing.

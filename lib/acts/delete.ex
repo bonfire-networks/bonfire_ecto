@@ -7,7 +7,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
   alias Ecto.Changeset
   import Bonfire.Epics
   use Arrows
-  import Where
+  import Untangle
 
   def run(epic, act) do
     on = act.options[:on]

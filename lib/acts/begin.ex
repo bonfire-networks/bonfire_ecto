@@ -5,7 +5,7 @@ defmodule Bonfire.Ecto.Acts.Begin do
   alias Bonfire.Epics.{Act, Epic}
   alias Bonfire.Ecto.Acts.{Commit, Work}
   import Bonfire.Epics
-  # import Where
+  # import Untangle
 
   def run(epic, act) do
     # take all the modules before commit and run them, then return the remainder.
@@ -19,17 +19,17 @@ defmodule Bonfire.Ecto.Acts.Begin do
         epic = Epic.run(nested)
         %{ epic | next: rest }
       true ->
-        debug(epic, act, "entering transaction")
+        maybe_debug(epic, act, "entering transaction")
         Bonfire.Common.Repo.transact_with(fn ->
           epic = Epic.run(nested)
           if epic.errors == [], do: {:ok, epic}, else: {:error, epic}
         end)
         |> case do
           {:ok, epic} ->
-            debug(epic, act, "committed successfully.")
+            maybe_debug(epic, act, "committed successfully.")
             %{ epic | next: rest }
           {:error, epic} ->
-            debug(epic, act, "rollback because of errors")
+            maybe_debug(epic, act, "rollback because of errors")
             %{ epic | next: rest }
         end
     end
