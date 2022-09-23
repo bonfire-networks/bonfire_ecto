@@ -10,6 +10,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
   import Bonfire.Epics
   use Arrows
   import Untangle
+  import Ecto.Query, only: [from: 2]
 
   def run(epic, act) do
     on = act.options[:on]
@@ -111,12 +112,25 @@ defmodule Bonfire.Ecto.Acts.Delete do
   end
 
   def maybe_delete(objects, repo) when is_list(objects) do
-    # FIXME: very inefficient
+    # FIXME: optimise
     Enum.each(objects, &maybe_delete(&1, repo))
     {:ok, nil}
   end
 
+  # def maybe_delete(%Pointers.Pointer{id: id}, repo) do
+  #   id
+  #   |> debug()
+  #   # TODO: not sure if this right
+  #   repo.delete_all(from p in Pointers.Pointer, where: p.id == ^id)
+  #   |> debug()
+  # rescue
+  #   e in Ecto.StaleEntryError ->
+  #     warn(e, "already deleted")
+  #     {:ok, nil}
+  # end
+
   def maybe_delete(object, repo) do
+    debug(object)
     repo.delete(object)
   rescue
     e in Ecto.StaleEntryError ->

@@ -80,7 +80,7 @@ defmodule Bonfire.Ecto.Acts.Work do
         repo.delete(changeset)
 
       other when is_struct(changeset) or is_list(changeset) ->
-        # FIXME: only trigger in delete epics!
+        # FIXME: only trigger this in delete epics!
         maybe_debug(
           epic,
           act,
