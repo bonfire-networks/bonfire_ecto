@@ -75,6 +75,12 @@ defmodule Bonfire.Ecto.Acts.Work do
         maybe_debug(epic, act, key, "Applying update to changeset at")
         repo.update(changeset)
 
+      :upsert ->
+        maybe_debug(epic, act, key, "Applying upsert to changeset at")
+        # note: because upsert is not an ecto action
+        Map.put(changeset, :action, :insert)
+        |> repo.upsert()
+
       :delete ->
         maybe_debug(epic, act, key, "Deleting changeset at")
         repo.delete(changeset)
@@ -120,7 +126,7 @@ defmodule Bonfire.Ecto.Acts.Work do
   defp get_key(epic, act, key) do
     case epic.assigns[key] do
       %Changeset{action: action} = changeset
-      when action in [:insert, :update, :delete] ->
+      when action in [:insert, :update, :upsert, :delete] ->
         [{key, changeset}]
 
       %Changeset{action: action} ->
