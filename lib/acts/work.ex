@@ -78,7 +78,7 @@ defmodule Bonfire.Ecto.Acts.Work do
       :upsert ->
         maybe_debug(epic, act, key, "Applying upsert to changeset at")
         # note: because upsert is not an ecto action
-        Map.put(changeset, :action, :insert)
+        Map.put(changeset, :action, nil)
         |> repo.upsert()
 
       :delete ->
