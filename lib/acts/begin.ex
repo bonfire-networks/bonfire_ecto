@@ -9,6 +9,7 @@ defmodule Bonfire.Ecto.Acts.Begin do
   alias Bonfire.Ecto.Acts.Work
 
   import Bonfire.Epics
+  import Bonfire.Common.Config, only: [repo: 0]
 
   # import Untangle
 
@@ -35,7 +36,7 @@ defmodule Bonfire.Ecto.Acts.Begin do
       true ->
         maybe_debug(epic, act, "entering transaction")
 
-        Bonfire.Common.Repo.transact_with(fn ->
+        repo().transact_with(fn ->
           epic = Epic.run(nested)
           if epic.errors == [], do: {:ok, epic}, else: {:error, epic}
         end)
