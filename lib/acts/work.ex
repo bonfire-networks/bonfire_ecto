@@ -52,7 +52,7 @@ defmodule Bonfire.Ecto.Acts.Work do
 
       true ->
         maybe_debug(epic, act, "Entering transaction")
-        repo = Application.get_env(:bonfire, :repo_module)
+        repo = Bonfire.Common.Config.repo()
 
         case repo.transact_with(fn -> run(epic, act, changesets, repo) end) do
           {:ok, epic} -> epic
@@ -68,21 +68,21 @@ defmodule Bonfire.Ecto.Acts.Work do
   defp run(epic, act, [{key, changeset} | changesets], repo) do
     case e(changeset, :action, nil) do
       :insert ->
-        maybe_debug(epic, act, key, "Inserting changeset at")
+        maybe_debug(epic, act, key, "Inserting changeset on #{repo} at")
         repo.insert(changeset)
 
       :update ->
-        maybe_debug(epic, act, key, "Applying update to changeset at")
+        maybe_debug(epic, act, key, "Applying update on #{repo} to changeset at")
         repo.update(changeset)
 
       :upsert ->
-        maybe_debug(epic, act, key, "Applying upsert to changeset at")
+        maybe_debug(epic, act, key, "Applying upsert on #{repo} to changeset at")
         # note: because upsert is not an ecto action
         Map.put(changeset, :action, nil)
         |> repo.upsert()
 
       :delete ->
-        maybe_debug(epic, act, key, "Deleting changeset at")
+        maybe_debug(epic, act, key, "Deleting changeset on #{repo} at")
         repo.delete(changeset)
 
       other when is_struct(changeset) or is_list(changeset) ->
