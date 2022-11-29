@@ -1,0 +1,10 @@
+digraph "xref graph" {
+  "lib/acts/begin.ex"
+  "lib/acts/begin.ex" -> "lib/acts/commit.ex"
+  "lib/acts/commit.ex"
+  "lib/acts/delete.ex"
+  "lib/acts/delete.ex" -> "lib/acts/work.ex"
+  "lib/acts/work.ex" -> "lib/acts/delete.ex"
+  "lib/acts/work.ex"
+  "lib/bonfire_ecto.ex"
+}
