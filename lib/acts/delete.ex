@@ -76,7 +76,11 @@ defmodule Bonfire.Ecto.Acts.Delete do
         |> Work.add(on)
 
       true ->
-        warn(object, "Don't know how to delete this, expected an ecto struct")
+        warn(
+          object,
+          "Don't know how to delete this, expected an ecto struct at opts[:#{on}] but got"
+        )
+
         epic
     end
   end
