@@ -9,7 +9,7 @@ defmodule Bonfire.Ecto.Acts.Work do
   """
   require Logger
   import Bonfire.Common.Utils
-  alias Bonfire.Epics.Act
+  # alias Bonfire.Epics.Act
   alias Bonfire.Epics.Epic
 
   alias Ecto.Changeset

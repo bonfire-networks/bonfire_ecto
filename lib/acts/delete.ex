@@ -2,7 +2,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
   @moduledoc """
   An act that marks a changeset or struct for deletion
   """
-  alias Bonfire.Epics.Act
+  # alias Bonfire.Epics.Act
   alias Bonfire.Epics.Epic
 
   alias Bonfire.Ecto.Acts.Work
@@ -10,7 +10,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
   import Bonfire.Epics
   use Arrows
   import Untangle
-  import Ecto.Query, only: [from: 2]
+  # import Ecto.Query, only: [from: 2]
 
   def run(epic, act) do
     on = act.options[:on]

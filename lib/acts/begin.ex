@@ -2,11 +2,11 @@ defmodule Bonfire.Ecto.Acts.Begin do
   @moduledoc """
   An Act that enters a transaction unless it senses that it would be futile.
   """
-  alias Bonfire.Epics.Act
+  # alias Bonfire.Epics.Act
   alias Bonfire.Epics.Epic
 
   alias Bonfire.Ecto.Acts.Commit
-  alias Bonfire.Ecto.Acts.Work
+  # alias Bonfire.Ecto.Acts.Work
 
   import Bonfire.Epics
   import Bonfire.Common.Config, only: [repo: 0]
