@@ -85,35 +85,35 @@ defmodule Bonfire.Ecto.Acts.Delete do
     end
   end
 
-  defp mark_for_deletion(obj) do
-    obj
-    |> Changeset.cast(%{}, [])
-    |> Map.put(:action, :delete)
-    |> debug("changeset")
-  end
+  # defp mark_for_deletion(obj) do
+  #   obj
+  #   |> Changeset.cast(%{}, [])
+  #   |> Map.put(:action, :delete)
+  #   |> debug("changeset")
+  # end
 
-  defp mark_for_deletion(changeset, delete_associations) do
-    changeset
-    # |> Enum.reduce(delete_associations, ..., &Ecto.build_assoc(&2, &1))
-    |> mark_for_deletion()
-    |> debug("changeset")
-  end
+  # defp mark_for_deletion(changeset, delete_associations) do
+  #   changeset
+  #   # |> Enum.reduce(delete_associations, ..., &Ecto.build_assoc(&2, &1))
+  #   |> mark_for_deletion()
+  #   |> debug("changeset")
+  # end
 
-  defp maybe_build_assoc(struct, assoc) do
-    Ecto.build_assoc(struct, assoc)
-  rescue
-    e in ArgumentError ->
-      debug(e, "skip")
-      struct
-  end
+  # defp maybe_build_assoc(struct, assoc) do
+  #   Ecto.build_assoc(struct, assoc)
+  # rescue
+  #   e in ArgumentError ->
+  #     debug(e, "skip")
+  #     struct
+  # end
 
-  defp maybe_put_assoc(changeset, assoc, value \\ nil) do
-    Changeset.put_assoc(changeset, assoc, value)
-  rescue
-    e in ArgumentError ->
-      debug(e, "skip")
-      changeset
-  end
+  # defp maybe_put_assoc(changeset, assoc, value \\ nil) do
+  #   Changeset.put_assoc(changeset, assoc, value)
+  # rescue
+  #   e in ArgumentError ->
+  #     debug(e, "skip")
+  #     changeset
+  # end
 
   def maybe_delete(objects, repo) when is_list(objects) do
     # FIXME: optimise
