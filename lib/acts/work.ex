@@ -94,12 +94,26 @@ defmodule Bonfire.Ecto.Acts.Work do
           "Did not detect a changeset with a valid action, attempt as object"
         )
 
-        Bonfire.Ecto.Acts.Delete.maybe_delete(changeset, repo)
-        |> debug()
+        with {:ok, num} <-
+               Bonfire.Ecto.Acts.Delete.maybe_delete(changeset, repo) |> debug("deleted") do
+          # TODO: assign the number to epic in case needed?
+          :ok
+        end
     end
     |> case do
+      :ok ->
+        maybe_debug(epic, act, key, "Successfully applied changeset, continue...")
+
+        epic
+        |> run(act, changesets, repo)
+
       {:ok, value} ->
-        maybe_debug(epic, act, key, "Successfully applied")
+        maybe_debug(
+          epic,
+          act,
+          key,
+          "Successfully applied changeset, assign the returned value and continue..."
+        )
 
         Epic.assign(epic, key, value)
         |> run(act, changesets, repo)

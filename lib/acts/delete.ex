@@ -119,7 +119,8 @@ defmodule Bonfire.Ecto.Acts.Delete do
     debug(objects)
     # FIXME: optimise
     Enum.each(objects, &maybe_delete(&1, repo))
-    {:ok, nil}
+    # FIXME: returned number 
+    {:ok, Enum.count(objects)}
     # objects |> repo.delete_all
   end
 
@@ -135,15 +136,16 @@ defmodule Bonfire.Ecto.Acts.Delete do
   rescue
     e in Ecto.StaleEntryError ->
       warn(e, "already deleted")
-      {:ok, nil}
+      {:ok, 0}
   end
 
   def maybe_delete(object, repo) do
     debug(object)
     repo.delete(object)
+    {:ok, 1}
   rescue
     e in Ecto.StaleEntryError ->
       warn(e, "already deleted")
-      {:ok, nil}
+      {:ok, 0}
   end
 end
