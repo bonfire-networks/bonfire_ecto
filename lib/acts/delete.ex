@@ -125,7 +125,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
   end
 
   def maybe_delete(%Pointers.Pointer{id: id, table_id: table_id}, repo) do
-    schema = Pointers.Tables.schema!("41RC1ESAREAV1S1B111TYSC0PE")
+    schema = Pointers.Tables.schema!(table_id)
     debug(schema, id)
 
     with {num, nil} <-
