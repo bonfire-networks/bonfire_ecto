@@ -91,7 +91,7 @@ defmodule Bonfire.Ecto.Acts.Work do
           epic,
           act,
           other,
-          "Did not detect a changeset with a valid action, attempt as object"
+          "Did not detect a changeset with a valid action, assume object deletion"
         )
 
         with {:ok, num} <-
