@@ -124,7 +124,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
     # objects |> repo.delete_all
   end
 
-  def maybe_delete(%Needle.Pointer{id: id, table_id: table_id}, repo) do
+  def maybe_delete(%Needle.Pointer{id: id, table_id: table_id} = pointer, repo) do
     schema = Needle.Tables.schema!(table_id)
     debug(schema, id)
 
@@ -137,6 +137,12 @@ defmodule Bonfire.Ecto.Acts.Delete do
     e in Ecto.StaleEntryError ->
       warn(e, "already deleted")
       {:ok, 0}
+
+    e in Ecto.MultiplePrimaryKeyError ->
+      error(e)
+
+      # FIXME: the above doesn't work for tables with multiple primary keys, just deleting the pointer instead for now
+      repo.delete(pointer)
   end
 
   def maybe_delete(object, repo) do
