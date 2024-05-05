@@ -1,5 +1,3 @@
 defmodule Bonfire.Ecto do
-  @moduledoc """
-  `Bonfire.Epics` helpers for working with `Ecto`
-  """
+  @moduledoc "./README.md" |> File.stream!() |> Enum.drop(1) |> Enum.join()
 end
