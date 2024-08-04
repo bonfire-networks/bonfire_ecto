@@ -1,6 +1,6 @@
 defmodule Bonfire.Ecto.Acts.Commit do
   @moduledoc """
-  A placeholder marker used by Begin to identify when to commit the transaction.
+  A placeholder marker used by `Bonfire.Ecto.Acts.Begin` to identify when to commit the transaction.
   """
 
   def run(epic, act) do

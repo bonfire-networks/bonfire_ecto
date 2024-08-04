@@ -1,7 +1,8 @@
 defmodule Bonfire.Ecto.Acts.Delete do
-  @moduledoc """
-  An act that marks a changeset or struct for deletion
-  """
+  # @moduledoc """
+  # An act that marks a changeset or struct for deletion
+  # """
+
   # alias Bonfire.Epics.Act
   alias Bonfire.Epics.Epic
 
@@ -12,78 +13,102 @@ defmodule Bonfire.Ecto.Acts.Delete do
   import Untangle
   import Ecto.Query
 
-  def run(epic, act) do
-    on = act.options[:on]
-    object = epic.assigns[on]
+  # @doc """
+  # Runs the delete act, marking the specified changeset or struct for deletion.
 
-    delete_associations =
-      (Keyword.get(epic.assigns[:options], :delete_associations, []) ++
-         (act.options[:delete_extra_associations] || []))
-      |> Enum.uniq()
+  # This function marks an object for deletion based on the `:on` key in the act options.
+  # If associations are specified for deletion, they will be processed as well.
 
-    maybe_debug(
-      epic,
-      act,
-      delete_associations,
-      "Delete including these associations"
-    )
+  # ## Parameters
 
-    cond do
-      epic.errors != [] ->
-        maybe_debug(epic, act, "skipping because of epic errors")
-        epic
+  #   - `epic` - The epic struct that contains the list of acts to be executed.
+  #   - `act` - The current act being processed.
 
-      not is_atom(on) ->
-        error(on, "Invalid `on` key provided")
-        Epic.add_error(epic, act, {:invalid_on, on})
+  # ## Examples
 
-      # is_struct(object) and object.__struct__ == Changeset ->
-      #   maybe_debug(epic, act, object, "Got changeset, marking for deletion")
-      #   mark_for_deletion(object, delete_associations)
-      #   |> Epic.assign(epic, on, ...)
+  #     iex> epic = %Epic{assigns: %{some_key: %SomeStruct{}}, errors: []}
+  #     iex> act = %{options: %{on: :some_key}}
+  #     iex> Bonfire.Ecto.Acts.Delete.run(epic, act)
+  #     %Epic{assigns: %{some_key: %SomeStruct{}}, errors: []}
 
-      is_struct(object) ->
-        maybe_debug(epic, act, object, "Got object, marking for deletion")
+  #     iex> epic = %Epic{assigns: %{some_key: %SomeStruct{}}, errors: ["error"]}
+  #     iex> act = %{options: %{on: :some_key}}
+  #     iex> Bonfire.Ecto.Acts.Delete.run(epic, act)
+  #     %Epic{assigns: %{some_key: %SomeStruct{}}, errors: ["error"]}
 
-        repo = Application.get_env(:bonfire, :repo_module)
+  # """
+  # def run(epic, act) do
+  #   on = act.options[:on]
+  #   object = epic.assigns[on]
 
-        # try to preload each assocation that should potentially be deleted
-        # object = Enum.reduce(delete_associations, object, &repo.maybe_preload(&2, &1, false))
+  #   delete_associations =
+  #     (Keyword.get(epic.assigns[:options], :delete_associations, []) ++
+  #        (act.options[:delete_extra_associations] || []))
+  #     |> Enum.uniq()
 
-        epic =
-          Enum.reduce(delete_associations, epic, fn assoc, epic ->
-            case repo.maybe_preload(object, assoc)
-                 |> Map.get(assoc) do
-              loaded when is_map(loaded) or is_list(loaded) ->
-                maybe_debug(epic, act, loaded, "adding association")
+  #   maybe_debug(
+  #     epic,
+  #     act,
+  #     delete_associations,
+  #     "Delete including these associations"
+  #   )
 
-                loaded
-                # |> mark_for_deletion()
-                |> Epic.assign(epic, assoc, ...)
-                |> Work.add(assoc)
+  #   cond do
+  #     epic.errors != [] ->
+  #       maybe_debug(epic, act, "skipping because of epic errors")
+  #       epic
 
-              _ ->
-                maybe_debug(epic, act, assoc, "skipping empty association")
-                epic
-            end
-          end)
+  #     not is_atom(on) ->
+  #       error(on, "Invalid `on` key provided")
+  #       Epic.add_error(epic, act, {:invalid_on, on})
 
-        # |> debug("assoc objects")
+  #     # is_struct(object) and object.__struct__ == Changeset ->
+  #     #   maybe_debug(epic, act, object, "Got changeset, marking for deletion")
+  #     #   mark_for_deletion(object, delete_associations)
+  #     #   |> Epic.assign(epic, on, ...)
 
-        object
-        # |> mark_for_deletion()
-        |> Epic.assign(epic, on, ...)
-        |> Work.add(on)
+  #     is_struct(object) ->
+  #       maybe_debug(epic, act, object, "Got object, marking for deletion")
 
-      true ->
-        warn(
-          object,
-          "Don't know how to delete this, expected an ecto struct at opts[:#{on}] but got"
-        )
+  #       repo = Application.get_env(:bonfire, :repo_module)
 
-        epic
-    end
-  end
+  #       # try to preload each assocation that should potentially be deleted
+  #       # object = Enum.reduce(delete_associations, object, &repo.maybe_preload(&2, &1, false))
+
+  #       epic =
+  #         Enum.reduce(delete_associations, epic, fn assoc, epic ->
+  #           case repo.maybe_preload(object, assoc)
+  #                |> Map.get(assoc) do
+  #             loaded when is_map(loaded) or is_list(loaded) ->
+  #               maybe_debug(epic, act, loaded, "adding association")
+
+  #               loaded
+  #               # |> mark_for_deletion()
+  #               |> Epic.assign(epic, assoc, ...)
+  #               |> Work.add(assoc)
+
+  #             _ ->
+  #               maybe_debug(epic, act, assoc, "skipping empty association")
+  #               epic
+  #           end
+  #         end)
+
+  #       # |> debug("assoc objects")
+
+  #       object
+  #       # |> mark_for_deletion()
+  #       |> Epic.assign(epic, on, ...)
+  #       |> Work.add(on)
+
+  #     true ->
+  #       warn(
+  #         object,
+  #         "Don't know how to delete this, expected an ecto struct at opts[:#{on}] but got"
+  #       )
+
+  #       epic
+  #   end
+  # end
 
   # defp mark_for_deletion(obj) do
   #   obj
@@ -115,6 +140,29 @@ defmodule Bonfire.Ecto.Acts.Delete do
   #     changeset
   # end
 
+  @doc """
+  Attempts to delete the given objects or struct from the repository.
+
+  This function handles the deletion of objects, whether they are a list, a `Needle.Pointer`, or a regular struct. It returns the number of objects deleted.
+
+  ## Parameters
+
+    - `objects` - The object(s) to be deleted, can be a list or a single struct.
+    - `repo` - The repository module to use for deletion.
+
+  ## Examples
+
+      iex> objects = [%SomeStruct{id: 1}, %SomeStruct{id: 2}]
+      iex> repo = MyApp.Repo
+      iex> Bonfire.Ecto.Acts.Delete.maybe_delete(objects, repo)
+      {:ok, 2}
+
+      iex> object = %SomeStruct{id: 1}
+      iex> repo = MyApp.Repo
+      iex> Bonfire.Ecto.Acts.Delete.maybe_delete(object, repo)
+      {:ok, 1}
+
+  """
   def maybe_delete(objects, repo) when is_list(objects) do
     debug(objects)
     # FIXME: optimise

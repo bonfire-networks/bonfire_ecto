@@ -18,15 +18,50 @@ defmodule Bonfire.Ecto.Acts.Work do
   import Untangle
 
   @doc """
-  Records that a particular key contains a changeset for processing.
+  Records that a particular key contains an `Ecto.Changeset` that needs to be processed (inserted, updated, upserted, or deleted).
 
-  Use in earlier acts, to schedule work for in-transaction.
+  Call this in earlier acts to queue work for in-transaction processing.
 
   If you wish to delete, you must ensure you set the changeset's `:action` key to `:delete`.
+
+  ## Parameters
+
+    - `epic` - The epic struct that contains the list of acts to be executed.
+    - `key` - The key representing the changeset to be processed.
+
+  ## Examples
+
+      iex> epic = %Epic{}
+      iex> Bonfire.Ecto.Acts.Work.add(epic, :some_changeset)
+      %Epic{assigns: %{Bonfire.Ecto.Acts.Work => [:some_changeset]}}
+
   """
   def add(epic, key), do: Epic.update(epic, __MODULE__, [], &[key | &1])
 
-  @doc false
+  @doc """
+  Runs the queued work within a transaction if no errors are detected in the epic.
+
+  This function retrieves the list of keys scheduled for processing, validates them,
+  and performs the appropriate actions (`:insert`, `:update`, `:upsert`, `:delete`) in a transaction.
+
+  ## Parameters
+
+    - `epic` - The epic struct that contains the list of acts to be executed.
+    - `act` - The current act being processed.
+
+  ## Examples
+
+      iex> epic = %Epic{assigns: %{Bonfire.Ecto.Acts.Work => [:some_changeset]}, errors: []}
+      iex> act = %{}
+      iex> Bonfire.Ecto.Acts.Work.run(epic, act)
+      %Epic{assigns: %{Bonfire.Ecto.Acts.Work => [:some_changeset]}, errors: []}
+
+      iex> epic = %Epic{assigns: %{Bonfire.Ecto.Acts.Work => [:some_changeset]}, errors: ["error"]}
+      iex> act = %{}
+      iex> Bonfire.Ecto.Acts.Work.run(epic, act)
+      %Epic{assigns: %{Bonfire.Ecto.Acts.Work => [:some_changeset]}, errors: ["error"]}
+
+  """
   def run(epic, act) do
     debug(act)
     # retrieve the list of keys to check

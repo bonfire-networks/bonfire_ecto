@@ -13,6 +13,31 @@ defmodule Bonfire.Ecto.Acts.Begin do
 
   # import Untangle
 
+  @doc """
+  Runs the given act within a transaction if no errors are detected in the epic.
+
+  This function takes the modules before the `Commit` module in the `epic.next` list, runs them,
+  and then processes the remaining modules. If there are any errors in the epic, it avoids
+  entering a transaction.
+
+  ## Parameters
+
+    - `epic` - The epic struct that contains the list of acts to be executed.
+    - `act` - The current act being processed.
+
+  ## Examples
+
+      iex> epic = %Epic{next: [%{module: OtherModule}, %{module: Commit}], errors: []}
+      iex> act = %{}
+      iex> Bonfire.Ecto.Acts.Begin.run(epic, act)
+      %Epic{next: [], errors: []}
+
+      iex> epic = %Epic{next: [%{module: OtherModule}, %{module: Commit}], errors: ["error"]}
+      iex> act = %{}
+      iex> Bonfire.Ecto.Acts.Begin.run(epic, act)
+      %Epic{next: [], errors: ["error"]}
+
+  """
   def run(epic, act) do
     # take all the modules before commit and run them, then return the remainder.
     {next, rest} = Enum.split_while(epic.next, &(&1.module != Commit))
