@@ -70,8 +70,12 @@ defmodule Bonfire.Ecto.Acts.Begin do
             maybe_debug(epic, act, "committed successfully.")
             %{epic | next: rest}
 
-          {:error, epic} ->
+          {:error, %Epic{} = epic} ->
             maybe_debug(epic, act, "rollback because of errors")
+            %{epic | next: rest}
+
+          {:error, e} ->
+            maybe_debug(epic, act, "rollback because of errors: #{inspect(e)}")
             %{epic | next: rest}
         end
     end
