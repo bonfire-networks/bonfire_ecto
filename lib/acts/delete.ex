@@ -75,25 +75,24 @@ defmodule Bonfire.Ecto.Acts.Delete do
           "Delete including these associations"
         )
 
-        # epic =
-        #   Enum.reduce(delete_associations, epic, fn assoc, epic ->
-        #     case repo.maybe_preload(object, assoc)
-        #          |> Map.get(assoc) do
-        #       loaded when is_map(loaded) or is_list(loaded) and loaded !=[] ->
-        #         maybe_debug(epic, act, loaded, "adding association")
+        epic =
+          Enum.reduce(delete_associations, epic, fn assoc, epic ->
+            case repo.maybe_preload(object, assoc)
+                 |> Map.get(assoc) do
+              loaded when is_map(loaded) or (is_list(loaded) and loaded != []) ->
+                maybe_debug(epic, act, loaded, "adding association")
 
-        #         loaded
-        #         |> mark_for_deletion()
-        #         |> Epic.assign(epic, assoc, ...)
-        #         |> Work.add(assoc)
+                loaded
+                |> mark_for_deletion()
+                |> Epic.assign(epic, assoc, ...)
+                |> Work.add(assoc)
 
-        #       _ ->
-        #         maybe_debug(epic, act, assoc, "skipping empty association")
-        #         epic
-        #     end
-        #   end)
-
-        # |> debug("assoc objects")
+              _ ->
+                maybe_debug(epic, act, assoc, "skipping empty association")
+                epic
+            end
+          end)
+          |> debug("assoc objects")
 
         object
         |> mark_for_deletion()
