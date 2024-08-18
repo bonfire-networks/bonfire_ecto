@@ -9,6 +9,7 @@ defmodule Bonfire.Ecto.Acts.Work do
   """
   require Logger
   import Bonfire.Common.Utils
+  alias Bonfire.Common.Enums
   # alias Bonfire.Epics.Act
   alias Bonfire.Epics.Epic
 
@@ -63,7 +64,6 @@ defmodule Bonfire.Ecto.Acts.Work do
 
   """
   def run(epic, act) do
-    debug(act)
     # retrieve the list of keys to check
     keys = Map.get(epic.assigns, __MODULE__, [])
     # flatten them all into a keyword list
@@ -86,8 +86,12 @@ defmodule Bonfire.Ecto.Acts.Work do
         epic
 
       true ->
-        maybe_debug(epic, act, "Entering transaction")
         repo = Bonfire.Common.Config.repo()
+
+        #  Note that usually a transaction was already opened in Begin, so as per https://hexdocs.pm/ecto/Ecto.Repo.html#c:transaction/2-nested-transactions this won't start a new one
+        if not repo.in_transaction?(),
+          do: maybe_debug(epic, act, "Work: Entering transaction"),
+          else: debug(act)
 
         case repo.transact_with(fn -> run(epic, act, changesets, repo) end) do
           {:ok, epic} -> epic
@@ -116,9 +120,17 @@ defmodule Bonfire.Ecto.Acts.Work do
         Map.put(changeset, :action, nil)
         |> repo.upsert()
 
+      :delete when is_list(changeset) ->
+        maybe_debug(epic, act, key, "Deleting multiple changesets on #{repo} at")
+
+        Enum.map(changeset, &repo.delete/1)
+        |> Enums.all_oks_or_error()
+
       :delete ->
         maybe_debug(epic, act, key, "Deleting changeset on #{repo} at")
-        repo.delete(changeset)
+
+        # Doesn't error if delete is stale. Defaults to false. This may happen if the struct has been deleted from the database before this deletion BUT ALSO if there is a rule or a trigger on the database that rejects the delete operation (FIXME: the latter seems undesirable in this case)
+        repo.delete(changeset, allow_stale: true)
 
       other when is_struct(changeset) or is_list(changeset) ->
         # FIXME: should only trigger this in delete epics!

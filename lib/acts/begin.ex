@@ -14,7 +14,7 @@ defmodule Bonfire.Ecto.Acts.Begin do
   # import Untangle
 
   @doc """
-  Runs the given act within a transaction if no errors are detected in the epic.
+  Runs the given act(s) within a transaction if no errors are detected in the epic.
 
   This function takes the modules before the `Commit` module in the `epic.next` list, runs them,
   and then processes the remaining modules. If there are any errors in the epic, it avoids
@@ -59,7 +59,12 @@ defmodule Bonfire.Ecto.Acts.Begin do
         %{epic | next: rest}
 
       true ->
-        maybe_debug(epic, act, "entering transaction")
+        if not repo().in_transaction?(),
+          do: maybe_debug(epic, act, "Begin: entering transaction"),
+          else:
+            IO.warn(
+              "We're already in a transaction, better avoid this and let Epics handle the transaction..."
+            )
 
         repo().transact_with(fn ->
           epic = Epic.run(nested)

@@ -80,7 +80,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
             case repo.maybe_preload(object, assoc)
                  |> Map.get(assoc) do
               loaded when is_map(loaded) or (is_list(loaded) and loaded != []) ->
-                maybe_debug(epic, act, loaded, "adding association")
+                maybe_debug(epic, act, loaded, "adding association to delete")
 
                 loaded
                 |> mark_for_deletion()
@@ -107,6 +107,10 @@ defmodule Bonfire.Ecto.Acts.Delete do
 
         epic
     end
+  end
+
+  defp mark_for_deletion(objs) when is_list(objs) do
+    Enum.map(objs, &mark_for_deletion/1)
   end
 
   defp mark_for_deletion(obj) do
