@@ -92,7 +92,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
                 epic
             end
           end)
-          |> debug("assoc objects")
+          |> debug("with assoc objects")
 
         object
         |> mark_for_deletion()
