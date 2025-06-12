@@ -180,7 +180,7 @@ defmodule Bonfire.Ecto.Acts.Delete do
     debug(schema, id)
 
     with {num, nil} <-
-           repo.delete_all(from p in schema, where: p.id == ^id)
+           repo.delete_many(from p in schema, where: p.id == ^id)
            |> debug() do
       {:ok, num}
     end
