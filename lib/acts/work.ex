@@ -106,10 +106,15 @@ defmodule Bonfire.Ecto.Acts.Work do
   defp run(epic, _, [], _), do: {:ok, epic}
 
   defp run(epic, act, [{key, changeset} | changesets], repo) do
-    case e(changeset, :action, nil) do
+    action = e(changeset, :action, nil)
+
+    case action do
       :insert ->
         maybe_debug(epic, act, key, "Inserting changeset on #{repo} at")
+        flood(changeset, "Inserting changeset")
+
         repo.insert(changeset)
+        |> flood("Inserted changeset?")
 
       :update ->
         maybe_debug(epic, act, key, "Applying update on #{repo} to changeset at")
@@ -133,12 +138,12 @@ defmodule Bonfire.Ecto.Acts.Work do
         # Doesn't error if delete is stale. Defaults to false. This may happen if the struct has been deleted from the database before this deletion BUT ALSO if there is a rule or a trigger on the database that rejects the delete operation (FIXME: the latter seems undesirable in this case)
         repo.delete(changeset, allow_stale: true)
 
-      other when is_struct(changeset) or is_list(changeset) ->
+      _other when is_struct(changeset) or is_list(changeset) ->
         # FIXME: should only trigger this in delete epics!
         maybe_debug(
           epic,
           act,
-          other,
+          action,
           "Did not detect a changeset with a valid action, assume object deletion"
         )
 
@@ -148,6 +153,7 @@ defmodule Bonfire.Ecto.Acts.Work do
           :ok
         end
     end
+    |> flood("Result of operation #{action} changeset")
     |> case do
       :ok ->
         maybe_debug(epic, act, key, "Successfully applied changeset, continue...")
@@ -162,6 +168,8 @@ defmodule Bonfire.Ecto.Acts.Work do
           key,
           "Successfully applied changeset, assign the returned value and continue..."
         )
+
+        flood(key, "Assign result to epic at")
 
         Epic.assign(epic, key, value)
         |> run(act, changesets, repo)
