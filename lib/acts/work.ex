@@ -111,10 +111,10 @@ defmodule Bonfire.Ecto.Acts.Work do
     case action do
       :insert ->
         maybe_debug(epic, act, key, "Inserting changeset on #{repo} at")
-        flood(changeset, "Inserting changeset")
+        debug(changeset, "Inserting changeset")
 
         repo.insert(changeset)
-        |> flood("Inserted changeset?")
+        |> debug("Inserted changeset?")
 
       :update ->
         maybe_debug(epic, act, key, "Applying update on #{repo} to changeset at")
@@ -153,7 +153,7 @@ defmodule Bonfire.Ecto.Acts.Work do
           :ok
         end
     end
-    |> flood("Result of operation #{action} changeset")
+    |> debug("Result of operation #{action} changeset")
     |> case do
       :ok ->
         maybe_debug(epic, act, key, "Successfully applied changeset, continue...")
@@ -169,7 +169,7 @@ defmodule Bonfire.Ecto.Acts.Work do
           "Successfully applied changeset, assign the returned value and continue..."
         )
 
-        flood(key, "Assign result to epic at")
+        debug(key, "Assign result to epic at")
 
         Epic.assign(epic, key, value)
         |> run(act, changesets, repo)
