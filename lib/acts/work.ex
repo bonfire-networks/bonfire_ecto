@@ -114,7 +114,7 @@ defmodule Bonfire.Ecto.Acts.Work do
         debug(changeset, "Inserting changeset")
 
         repo.insert(changeset)
-        |> debug("Inserted changeset?")
+        |> Untangle.debug("Inserted changeset?")
 
       :update ->
         maybe_debug(epic, act, key, "Applying update on #{repo} to changeset at")
@@ -169,7 +169,7 @@ defmodule Bonfire.Ecto.Acts.Work do
           "Successfully applied changeset, assign the returned value and continue..."
         )
 
-        debug(key, "Assign result to epic at")
+        Untangle.debug(key, "Assign result to epic at")
 
         Epic.assign(epic, key, value)
         |> run(act, changesets, repo)
