@@ -190,10 +190,8 @@ defmodule Bonfire.Ecto.Acts.Delete do
       {:ok, 0}
 
     e in Ecto.MultiplePrimaryKeyError ->
-      error(e)
-
-      # FIXME: the above doesn't work for tables with multiple primary keys, just deleting the pointer instead for now
-      repo.delete(pointer)
+      warn(e, "Multiple primary keys detected, using delete_all instead")
+      delete_with_multiple_primary_key(pointer, repo)
   end
 
   def maybe_delete(object, repo) do
@@ -204,5 +202,47 @@ defmodule Bonfire.Ecto.Acts.Delete do
     e in Ecto.StaleEntryError ->
       warn(e, "already deleted")
       {:ok, 0}
+
+    e in Ecto.MultiplePrimaryKeyError ->
+      warn(e, "Multiple primary keys detected, using delete_all instead")
+      delete_with_multiple_primary_key(object, repo)
+  end
+
+  defp delete_with_multiple_primary_key(object, repo) do
+    # Extract the actual schema from the changeset if needed
+    schema =
+      case object do
+        %Ecto.Changeset{data: %schema_mod{}} -> schema_mod
+        %schema_mod{} -> schema_mod
+      end
+
+    # Get primary key fields from the schema
+    primary_keys = schema.__schema__(:primary_key)
+
+    # Extract the actual data (handling both changesets and structs)
+    data =
+      case object do
+        %Ecto.Changeset{data: data} -> data
+        data -> data
+      end
+
+    # Build a query that filters by all primary key fields
+    query =
+      Enum.reduce(primary_keys, schema, fn key, query ->
+        value = Map.get(data, key)
+        where(query, [t], field(t, ^key) == ^value)
+      end)
+
+    case repo.delete_all(query) do
+      {1, nil} ->
+        {:ok, 1}
+
+      {0, nil} ->
+        {:ok, 0}
+
+      {n, nil} when n > 1 ->
+        warn("Deleted #{n} records for composite key")
+        {:ok, n}
+    end
   end
 end
